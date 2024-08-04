@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import getUrlModel from '../../models/Url';
 import getClickModel from '../../models/Click';
-import geoip from 'geoip-lite';
 import parser from 'ua-parser-js';
+import axios from 'axios';
+
+const IPDATA_API_KEY = process.env.IPDATA_API_KEY;
 
 export async function GET(request) {
   const { pathname } = new URL(request.url);
@@ -28,7 +30,18 @@ export async function GET(request) {
         deviceType = ua.device.type;
       }
 
-      const geo = geoip.lookup(ipAddress) || {};
+      // Použití ipdata pro získání geolokace
+      let geo = {};
+      try {
+        const response = await axios.get(`https://api.ipdata.co/${ipAddress}?api-key=${IPDATA_API_KEY}`);
+        geo = {
+          country: response.data.country_name,
+          region: response.data.region,
+          city: response.data.city
+        };
+      } catch (err) {
+        console.error("Geo Location Error:", err);
+      }
 
       console.log("IP Address:", ipAddress);
       console.log("Referer:", referer);
@@ -48,6 +61,7 @@ export async function GET(request) {
           city: geo.city
         }
       });
+
       await newClick.save();
       console.log("Saved click information:", newClick);
 

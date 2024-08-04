@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "geoip-lite": "^1.4.10",
+    "axios": "^1.7.3",
     "mongoose": "^8.5.2",
     "nanoid": "^5.0.7",
     "next": "14.2.5",
