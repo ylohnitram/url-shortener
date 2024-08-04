@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import getUrlModel from '../../models/Url';
 import { nanoid } from 'nanoid';
+import axios from 'axios';
 
 export async function POST(request) {
   const Url = await getUrlModel();
@@ -14,14 +15,27 @@ export async function POST(request) {
   }
 
   try {
-    // Zkontrolovat, zda URL již existuje
+    // 1. Zkontrolovat, zda URL již existuje
     const existingUrl = await Url.findOne({ originalUrl });
     if (existingUrl) {
       console.log("URL already exists:", existingUrl);
       return NextResponse.json({ shortUrl: existingUrl.shortUrl }, { status: 200 });
     }
 
-    // Vytvořit novou zkrácenou URL, pokud neexistuje
+    // 2. Ověřit, že URL je dostupná
+    try {
+      const response = await axios.head(originalUrl);
+      const statusCode = response.status;
+      if (statusCode < 200 || statusCode >= 400) {
+        console.error("URL is not accessible:", statusCode);
+        return NextResponse.json({ error: 'URL is not accessible' }, { status: 400 });
+      }
+    } catch (error) {
+      console.error("URL verification failed:", error);
+      return NextResponse.json({ error: 'URL verification failed' }, { status: 400 });
+    }
+
+    // 3. Vytvořit novou zkrácenou URL, pokud neexistuje
     const shortUrl = nanoid(6);
     const newUrl = new Url({
       originalUrl,
