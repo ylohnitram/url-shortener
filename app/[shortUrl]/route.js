@@ -4,7 +4,7 @@ import getClickModel from '../../models/Click';
 import parser from 'ua-parser-js';
 import axios from 'axios';
 
-const IPDATA_API_KEY = process.env.IPDATA_API_KEY;
+const IPDATA_API_KEY = 'YOUR_IPDATA_API_KEY';
 
 export async function GET(request) {
   const { pathname } = new URL(request.url);
@@ -20,7 +20,11 @@ export async function GET(request) {
     if (url) {
       console.log("Found original URL:", url.originalUrl);
 
-      const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('remote-addr');
+      let ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('remote-addr');
+      if (ipAddress.startsWith('::ffff:')) {
+        ipAddress = ipAddress.split('::ffff:')[1];
+      }
+
       const referer = request.headers.get('referer') || '';
       const userAgent = request.headers.get('user-agent') || '';
       const ua = parser(userAgent);
@@ -32,15 +36,18 @@ export async function GET(request) {
 
       // Použití ipdata pro získání geolokace
       let geo = {};
-      try {
-        const response = await axios.get(`https://api.ipdata.co/${ipAddress}?api-key=${IPDATA_API_KEY}`);
-        geo = {
-          country: response.data.country_name,
-          region: response.data.region,
-          city: response.data.city
-        };
-      } catch (err) {
-        console.error("Geo Location Error:", err);
+      if (ipAddress !== '127.0.0.1') {
+        try {
+          const response = await axios.get(`https://api.ipdata.co/${ipAddress}?api-key=${IPDATA_API_KEY}`);
+          console.log('Geolocation API response:', response.data);
+          geo = {
+            country: response.data.country_name,
+            region: response.data.region,
+            city: response.data.city
+          };
+        } catch (err) {
+          console.error("Geo Location Error:", err);
+        }
       }
 
       console.log("IP Address:", ipAddress);
@@ -56,9 +63,9 @@ export async function GET(request) {
         referer,
         deviceType,
         geolocation: {
-          country: geo.country,
-          region: geo.region,
-          city: geo.city
+          country: geo.country || '',
+          region: geo.region || '',
+          city: geo.city || ''
         }
       });
 
