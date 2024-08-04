@@ -3,16 +3,16 @@ import getUrlModel from '../../models/Url';
 import { nanoid } from 'nanoid';
 
 export async function POST(request) {
-  const Url = await getUrlModel();
-  const { originalUrl } = await request.json();
-  console.log("Received URL to shorten:", originalUrl);
-
-  if (!originalUrl) {
-    console.error("Invalid URL provided");
-    return NextResponse.json({ error: 'Invalid URL' }, { status: 400 });
-  }
-
   try {
+    const Url = await getUrlModel();
+    const { originalUrl } = await request.json();
+    console.log("Received URL to shorten:", originalUrl);
+
+    if (!originalUrl) {
+      console.error("Invalid URL provided");
+      return NextResponse.json({ error: 'Invalid URL' }, { status: 400 });
+    }
+
     // Zkontrolovat, zda URL již existuje
     const existingUrl = await Url.findOne({ originalUrl });
     if (existingUrl) {
