@@ -4,7 +4,7 @@ import getClickModel from '../../models/Click';
 import parser from 'ua-parser-js';
 import axios from 'axios';
 
-const IPDATA_API_KEY = 'YOUR_IPDATA_API_KEY';
+const IPDATA_API_KEY = process.env.IPDATA_API_KEY;
 
 export async function GET(request) {
   const { pathname } = new URL(request.url);
