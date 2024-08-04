@@ -13,7 +13,7 @@ export default function Home() {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ originalUrl }),
+      body: JSON.stringify({ originalUrl, author: 'anonymous' }),
     });
     const data = await response.json();
     setShortUrl(`${window.location.origin}/${data.shortUrl}`);
@@ -39,6 +39,11 @@ export default function Home() {
             placeholder="Enter your URL"
             className="w-full p-2 border border-gray-300 rounded mb-2 text-black"
             required
+          />
+          <input
+            type="hidden"
+            value="anonymous"
+            name="author"
           />
           <button type="submit" className="w-full p-2 bg-gray-800 text-white rounded hover:bg-gray-900">
             Shorten

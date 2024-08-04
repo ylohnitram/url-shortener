@@ -11,6 +11,10 @@ const UrlSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
+  author: {
+    type: String,
+    default: 'anonymous',
+  },
   createdAt: {
     type: Date,
     default: Date.now
