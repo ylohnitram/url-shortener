@@ -72,7 +72,7 @@ export async function GET(request) {
       await newClick.save();
       console.log("Saved click information:", newClick);
 
-      return NextResponse.redirect(url.originalUrl);
+      return NextResponse.redirect(url.originalUrl, 301);
     } else {
       console.error("URL not found for short URL:", shortUrl);
       return NextResponse.json({ error: 'URL not found' }, { status: 404 });
