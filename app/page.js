@@ -28,8 +28,8 @@ export default function Home() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-white p-8 rounded shadow-md w-full max-w-lg text-center">
+    <div className="flex items-center justify-center min-h-screen bg-white text-black">
+      <div className="bg-gray-200 p-8 rounded shadow-md w-full max-w-lg text-center">
         <h1 className="text-2xl font-bold mb-4">URL Shortener</h1>
         <form onSubmit={handleSubmit} className="mb-4">
           <input
@@ -40,7 +40,7 @@ export default function Home() {
             className="w-full p-2 border border-gray-300 rounded mb-2 text-black"
             required
           />
-          <button type="submit" className="w-full p-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+          <button type="submit" className="w-full p-2 bg-gray-800 text-white rounded hover:bg-gray-900">
             Shorten
           </button>
         </form>
