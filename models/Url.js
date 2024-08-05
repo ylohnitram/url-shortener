@@ -15,6 +15,10 @@ const UrlSchema = new mongoose.Schema({
     type: String,
     default: 'anonymous',
   },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
   title: {
     type: String,
     default: 'Title not available'
@@ -25,15 +29,11 @@ const UrlSchema = new mongoose.Schema({
   },
   ipfsPath: {
     type: String,
-    default: 'tzurl-not-found.svg'
+    default: 'bafkreie7g3esi7hx27z5n7xx5mkhxzmnboj6hycsfj436iwjusymu233va'
   },
   mime: {
     type: String,
-    default: ''
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
+    default: 'image/svg+xml'
   }
 });
 
