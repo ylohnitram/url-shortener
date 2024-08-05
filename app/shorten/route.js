@@ -18,7 +18,7 @@ async function fetchMetadata(originalUrl) {
   const query = `
     query ItemDescription {
       token(
-        where: {fa_contract: {_eq: "${fa_contract}"}, token_id: {_eq: "${token_id}"}
+        where: {fa_contract: {_eq: "${fa_contract}"}, token_id: {_eq: "${token_id}"} }
       ) {
         name
         description
