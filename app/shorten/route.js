@@ -3,7 +3,7 @@ import getUrlModel from '../../models/Url';
 import { nanoid } from 'nanoid';
 import axios from 'axios';
 import sharp from 'sharp';
-import { downloadFromIPFS, uploadToWeb3Storage } from '../../lib/ipfs';
+import { downloadFromIPFS, uploadToPinata } from '../../lib/ipfs';
 
 const GRAPHQL_API_URL = 'https://data.objkt.com/v3/graphql';
 
@@ -50,24 +50,29 @@ async function fetchMetadata(originalUrl) {
 export async function POST(request) {
   const Url = await getUrlModel();
   const { originalUrl, author } = await request.json();
+  console.log("Received URL to shorten:", originalUrl);
+  console.log("Received author:", author);
 
   if (!originalUrl) {
+    console.error("Invalid URL provided");
     return NextResponse.json({ error: 'Invalid URL' }, { status: 400 });
   }
 
   try {
     const existingUrl = await Url.findOne({ originalUrl });
     if (existingUrl) {
+      console.log("URL already exists:", existingUrl);
       return NextResponse.json({ shortUrl: existingUrl.shortUrl }, { status: 200 });
     }
 
     try {
-      const response = await axios.head(originalUrl, { timeout: 2000 });
-      const statusCode = response.status;
-      if (statusCode < 200 || statusCode >= 400) {
+      const response = await axios.head(originalUrl);
+      if (response.status < 200 || response.status >= 400) {
+        console.error("URL is not accessible:", response.status);
         return NextResponse.json({ error: 'URL is not accessible' }, { status: 400 });
       }
     } catch (error) {
+      console.error("URL verification failed:", error);
       return NextResponse.json({ error: 'URL verification failed' }, { status: 400 });
     }
 
@@ -86,17 +91,13 @@ export async function POST(request) {
       console.error("Metadata fetch failed:", error);
     }
 
-    if (mime === 'image/gif' || mime === 'video/mp4' || mime === 'video/webm' || mime === 'video/ogg') {
+    if (mime === 'image/gif' || mime === 'video/mp4' || mime === 'video/webm') {
       try {
-        const ipfsPath = thumbnail_uri.split('ipfs://')[1];
-        const buffer = await downloadFromIPFS(ipfsPath);
-        console.log("Downloaded GIF from IPFS, converting to PNG...");
-        const convertedBuffer = await sharp(buffer).png().toBuffer();
-        console.log("Conversion complete, uploading to Web3.Storage...");
-        const cid = await uploadToWeb3Storage(convertedBuffer, 'thumbnail.png');
-        thumbnail_uri = `${cid}/thumbnail.png`;
+        const buffer = await downloadFromIPFS(thumbnail_uri.split('ipfs://')[1]);
+        const staticImageBuffer = await sharp(buffer).png().toBuffer();
+        thumbnail_uri = await uploadToPinata(staticImageBuffer, 'thumbnail.png');
       } catch (error) {
-        console.error("Conversion or upload failed:", error);
+        console.error("Failed to convert and upload image:", error);
         thumbnail_uri = 'https://tzurl.art/images/tzurl-not-found.svg';
       }
     }
@@ -108,14 +109,14 @@ export async function POST(request) {
       author: author || 'anonymous',
       title,
       description,
-      ipfsPath: thumbnail_uri.split('/').pop(),
+      ipfsPath: thumbnail_uri,
       mime
     });
     await newUrl.save();
-    console.log("URL successfully saved to DB.");
+    console.log("Saved new URL:", newUrl);
     return NextResponse.json({ shortUrl }, { status: 201 });
   } catch (error) {
-    console.error("Database error:", error);
+    console.error("Error saving to the database:", error);
     return NextResponse.json({ error: 'Database error' }, { status: 500 });
   }
 }

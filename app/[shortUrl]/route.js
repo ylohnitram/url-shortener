@@ -1,5 +1,3 @@
-// app/[shortUrl]/route.js
-
 import { NextResponse } from 'next/server';
 import getUrlModel from '../../models/Url';
 import getClickModel from '../../models/Click';
@@ -33,7 +31,6 @@ export async function GET(request) {
         deviceType = ua.device.type;
       }
 
-      // Použití ipdata pro získání geolokace
       let geo = {};
       if (ipAddress !== '127.0.0.1') {
         try {
@@ -48,7 +45,6 @@ export async function GET(request) {
         }
       }
 
-      // Uložit informace o kliknutí
       const newClick = new Click({
         shortUrl,
         ipAddress,
@@ -63,16 +59,15 @@ export async function GET(request) {
 
       await newClick.save();
 
-      // Zkontrolovat MIME typ
-      let imageUrl = url.ipfsPath;
-      if (url.mime !== 'image/png' && url.mime !== 'image/jpeg' && url.mime !== 'image/jpg') {
-        imageUrl = 'images/tzurl-not-found.svg';
-      } else {
-        // Najít dostupný IPFS obrázek
-        imageUrl = await downloadFromIPFS(url.ipfsPath) || 'images/tzurl-not-found.svg';
+      let imageUrl = 'images/tzurl-not-found.svg';
+      if (url.mime !== 'image/gif' && url.mime !== 'video/mp4' && url.mime !== 'video/webm') {
+        try {
+          imageUrl = await downloadFromIPFS(url.ipfsPath.split('ipfs://')[1]);
+        } catch (error) {
+          console.error("Error downloading IPFS image:", error);
+        }
       }
 
-      // Vraťte HTML odpověď s meta tagy a automatickým přesměrováním
       const htmlResponse = `
         <!DOCTYPE html>
         <html lang="en">
