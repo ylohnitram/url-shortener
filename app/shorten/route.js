@@ -91,11 +91,12 @@ export async function POST(request) {
       console.error("Metadata fetch failed:", error);
     }
 
-    if (mime === 'image/gif' || mime === 'video/mp4' || mime === 'video/webm') {
+    if (mime === 'image/gif' || mime === 'video/mp4' || mime === 'video/webm' || mime === 'video/ogg') {
       try {
         const buffer = await downloadFromIPFS(thumbnail_uri.split('ipfs://')[1]);
         const staticImageBuffer = await sharp(buffer).png().toBuffer();
-        thumbnail_uri = await uploadToPinata(staticImageBuffer, 'thumbnail.png');
+        const cid = await uploadToPinata(staticImageBuffer, 'thumbnail.png');
+        thumbnail_uri = `ipfs://${cid}`;
       } catch (error) {
         console.error("Failed to convert and upload image:", error);
         thumbnail_uri = 'https://tzurl.art/images/tzurl-not-found.svg';
