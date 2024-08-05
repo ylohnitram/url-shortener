@@ -81,19 +81,19 @@ export async function GET(request) {
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <meta property="og:title" content="${url.title || 'Title not available'}">
           <meta property="og:description" content="${url.description || 'Description not available'}">
-          <meta property="og:image" content="${url.image || 'https://example.com/default-image.jpg'}">
+          <meta property="og:image" content="${url.image || 'https://objkt.com/tokens/KT1Ss6b2zZnxkjVgi72RJq6e2iMNN2mAJF5H/0'}">
           <meta property="og:url" content="https://tzurl.art/${shortUrl}">
           <meta name="twitter:card" content="summary_large_image">
           <meta name="twitter:title" content="${url.title || 'Title not available'}">
           <meta name="twitter:description" content="${url.description || 'Description not available'}">
-          <meta name="twitter:image" content="${url.image || 'https://example.com/default-image.jpg'}">
+          <meta name="twitter:image" content="${url.image || 'https://objkt.com/tokens/KT1Ss6b2zZnxkjVgi72RJq6e2iMNN2mAJF5H/0'}">
           <meta name="twitter:site" content="@tzurl_art">
           <meta name="twitter:creator" content="@tzurl_art">
           <title>Redirecting...</title>
         </head>
         <body>
           <p>Redirecting to <a href="${url.originalUrl}">${url.originalUrl}</a></p>
-          <p>Shortened by <a href="https://tzurl.art/${shortUrl}">tzurl.art</a></p>
+          <p>Shortened by <a href="https://tzurl.art/">tzurl.art</a></p>
         </body>
         </html>
       `;
