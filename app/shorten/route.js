@@ -92,6 +92,7 @@ export async function POST(request) {
       console.error("Metadata fetch failed:", error);
     }
 
+    const shortUrl = nanoid(9);
     if (mime === 'image/gif' || mime === 'video/mp4' || mime === 'video/webm' || mime === 'video/ogg') {
       try {
         console.log("Converting and uploading static image for MIME type:", mime);
@@ -99,16 +100,16 @@ export async function POST(request) {
         console.log("Downloaded buffer from IPFS");
         const staticImageBuffer = await sharp(buffer).png().toBuffer();
         console.log("Converted image to PNG");
-        const cid = await uploadToPinata(staticImageBuffer, 'thumbnail.png');
+        const cid = await uploadToPinata(staticImageBuffer, `thumbnail-${shortUrl}-.png`);
         console.log(`Uploaded PNG to Pinata with CID: ${cid}`);
         thumbnail_uri = `ipfs://${cid}`;
+        mime = 'image/png'; 
       } catch (error) {
         console.error("Failed to convert and upload image:", error);
         thumbnail_uri = 'https://tzurl.art/images/tzurl-not-found.svg';
       }
     }
 
-    const shortUrl = nanoid(6);
     const newUrl = new Url({
       originalUrl,
       shortUrl,
