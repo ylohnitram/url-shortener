@@ -21,7 +21,7 @@ const IPFS_GATEWAYS = [
 ];
 
 async function findAvailableIPFSUrl(ipfsPath) {
-  const checks = IPFS_GATEWAYS.map(async gateway => {
+  for (const gateway of IPFS_GATEWAYS) {
     try {
       const url = `${gateway}${ipfsPath}`;
       const response = await axios.head(url);
@@ -31,11 +31,8 @@ async function findAvailableIPFSUrl(ipfsPath) {
     } catch (error) {
       console.error(`Error checking gateway ${gateway}:`, error);
     }
-    return null;
-  });
-
-  const results = await Promise.all(checks);
-  return results.find(url => url !== null);
+  }
+  throw new Error('No available IPFS gateway found for the image');
 }
 
 export async function GET(request) {
