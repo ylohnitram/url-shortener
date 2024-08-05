@@ -3,6 +3,48 @@ import getUrlModel from '../../models/Url';
 import { nanoid } from 'nanoid';
 import axios from 'axios';
 
+const GRAPHQL_API_URL = 'https://data.objkt.com/v3/graphql';
+
+async function fetchMetadata(originalUrl) {
+  const match = originalUrl.match(/tokens\/([^/]+)\/([^/]+)/);
+  if (!match) {
+    throw new Error('Invalid URL format');
+  }
+
+  const [_, fa_contract, token_id] = match;
+
+  const query = `
+    query ItemDescription {
+      token(
+        where: {fa_contract: {_eq: "${fa_contract}"}, token_id: {_eq: "${token_id}"}}
+      ) {
+        name
+        description
+        thumbnail_uri
+      }
+    }
+  `;
+
+  const response = await axios.post(GRAPHQL_API_URL, {
+    query,
+  });
+
+  if (response.data.errors) {
+    throw new Error(response.data.errors[0].message);
+  }
+
+  const tokenData = response.data.data.token[0];
+  if (!tokenData) {
+    throw new Error('No token data found');
+  }
+
+  return {
+    title: tokenData.name,
+    description: tokenData.description,
+    thumbnail_uri: tokenData.thumbnail_uri.replace('ipfs://', ''),
+  };
+}
+
 export async function POST(request) {
   const Url = await getUrlModel();
   const { originalUrl, author } = await request.json();
@@ -35,12 +77,29 @@ export async function POST(request) {
       return NextResponse.json({ error: 'URL verification failed' }, { status: 400 });
     }
 
-    // 3. Vytvořit novou zkrácenou URL, pokud neexistuje
+    // 3. Získat metadata z objkt.com
+    let title = 'Title not available';
+    let description = 'Description not available';
+    let thumbnail_uri = '/images/tzurl-not-found.svg';
+
+    try {
+      const metadata = await fetchMetadata(originalUrl);
+      title = metadata.title;
+      description = metadata.description;
+      thumbnail_uri = metadata.thumbnail_uri;
+    } catch (error) {
+      console.error("Metadata fetch failed:", error);
+    }
+
+    // 4. Vytvořit novou zkrácenou URL, pokud neexistuje
     const shortUrl = nanoid(6);
     const newUrl = new Url({
       originalUrl,
       shortUrl,
       author: author || 'anonymous',
+      title,
+      description,
+      ipfsPath: thumbnail_uri,
     });
     await newUrl.save();
     console.log("Saved new URL:", newUrl);

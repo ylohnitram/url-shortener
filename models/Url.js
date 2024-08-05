@@ -15,22 +15,22 @@ const UrlSchema = new mongoose.Schema({
     type: String,
     default: 'anonymous',
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  ipfsPath: {
-    type: String,
-    required: false,
-  },
   title: {
     type: String,
-    required: false,
+    default: 'Title not available'
   },
   description: {
     type: String,
-    required: false,
+    default: 'Description not available'
   },
+  ipfsPath: {
+    type: String,
+    default: '/images/tzurl-not-found.svg'
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
 });
 
 async function getUrlModel() {
