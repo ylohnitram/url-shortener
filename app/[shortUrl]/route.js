@@ -24,9 +24,9 @@ async function findAvailableIPFSUrl(ipfsPath) {
   const checks = IPFS_GATEWAYS.map(async gateway => {
     try {
       const url = `${gateway}${ipfsPath}`;
-      const response = await axios.head(url, { timeout: 2000 }); // Zkrácení času čekání na 2 sekundy
+      const response = await axios.head(url);
       if (response.status === 200) {
-        return { url, contentType: response.headers['content-type'] };
+        return url;
       }
     } catch (error) {
       console.error(`Error checking gateway ${gateway}:`, error);
@@ -35,7 +35,7 @@ async function findAvailableIPFSUrl(ipfsPath) {
   });
 
   const results = await Promise.all(checks);
-  return results.find(result => result !== null);
+  return results.find(url => url !== null);
 }
 
 export async function GET(request) {
@@ -92,12 +92,11 @@ export async function GET(request) {
 
       await newClick.save();
 
-      // Najít dostupný IPFS obrázek
-      const ipfsPath = url.ipfsPath;
-      let { url: imageUrl, contentType } = await findAvailableIPFSUrl(ipfsPath) || {};
-
-      // Pokud není dostupný žádný IPFS gateway nebo MIME typ není obrázek, použijte výchozí obrázek
-      if (!imageUrl || !contentType || !contentType.startsWith('image/')) {
+      // Najít dostupný IPFS obrázek, pokud je mime typu image
+      let imageUrl;
+      if (url.mime.startsWith('image/')) {
+        imageUrl = await findAvailableIPFSUrl(url.ipfsPath) || '/images/tzurl-not-found.svg';
+      } else {
         imageUrl = '/images/tzurl-not-found.svg';
       }
 

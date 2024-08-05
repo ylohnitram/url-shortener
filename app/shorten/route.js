@@ -16,7 +16,7 @@ async function fetchMetadata(originalUrl) {
   const query = `
     query ItemDescription {
       token(
-        where: {fa_contract: {_eq: "${fa_contract}"}, token_id: {_eq: "${token_id}"}
+        where: {fa_contract: {_eq: "${fa_contract}"}, token_id: {_eq: "${token_id}"}}
       ) {
         name
         description
@@ -40,7 +40,7 @@ async function fetchMetadata(originalUrl) {
   return {
     title: tokenData.name,
     description: tokenData.description,
-    thumbnail_uri: tokenData.thumbnail_uri,
+    thumbnail_uri: tokenData.thumbnail_uri.split('ipfs://')[1],
     mime: tokenData.mime,
   };
 }
@@ -48,11 +48,8 @@ async function fetchMetadata(originalUrl) {
 export async function POST(request) {
   const Url = await getUrlModel();
   const { originalUrl, author } = await request.json();
-  console.log("Received URL to shorten:", originalUrl);
-  console.log("Received author:", author);
 
   if (!originalUrl) {
-    console.error("Invalid URL provided");
     return NextResponse.json({ error: 'Invalid URL' }, { status: 400 });
   }
 
@@ -60,7 +57,6 @@ export async function POST(request) {
     // 1. Zkontrolovat, zda URL již existuje
     const existingUrl = await Url.findOne({ originalUrl });
     if (existingUrl) {
-      console.log("URL already exists:", existingUrl);
       return NextResponse.json({ shortUrl: existingUrl.shortUrl }, { status: 200 });
     }
 
@@ -69,11 +65,9 @@ export async function POST(request) {
       const response = await axios.head(originalUrl);
       const statusCode = response.status;
       if (statusCode < 200 || statusCode >= 400) {
-        console.error("URL is not accessible:", statusCode);
         return NextResponse.json({ error: 'URL is not accessible' }, { status: 400 });
       }
     } catch (error) {
-      console.error("URL verification failed:", error);
       return NextResponse.json({ error: 'URL verification failed' }, { status: 400 });
     }
 
@@ -87,7 +81,7 @@ export async function POST(request) {
       const metadata = await fetchMetadata(originalUrl);
       title = metadata.title;
       description = metadata.description;
-      thumbnail_uri = metadata.thumbnail_uri.split('ipfs://')[1];
+      thumbnail_uri = metadata.thumbnail_uri;
       mime = metadata.mime;
     } catch (error) {
       console.error("Metadata fetch failed:", error);
@@ -105,10 +99,8 @@ export async function POST(request) {
       mime,
     });
     await newUrl.save();
-    console.log("Saved new URL:", newUrl);
     return NextResponse.json({ shortUrl }, { status: 201 });
   } catch (error) {
-    console.error("Error saving to the database:", error);
     return NextResponse.json({ error: 'Database error' }, { status: 500 });
   }
 }
