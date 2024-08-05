@@ -3,7 +3,7 @@ import getUrlModel from '../../models/Url';
 import getClickModel from '../../models/Click';
 import parser from 'ua-parser-js';
 import axios from 'axios';
-import { downloadFromIPFS } from '../../lib/ipfs';
+import { getIPFSUrl } from '../../lib/ipfs';
 
 const IPDATA_API_KEY = process.env.IPDATA_API_KEY;
 
@@ -59,12 +59,12 @@ export async function GET(request) {
 
       await newClick.save();
 
-      let imageUrl = 'images/tzurl-not-found.svg';
-      if (url.mime !== 'image/gif' && url.mime !== 'video/mp4' && url.mime !== 'video/webm') {
+      let imageUrl = 'https://tzurl.art/images/tzurl-not-found.svg';
+      if (url.mime !== 'image/gif' && url.mime !== 'video/mp4' && url.mime !== 'video/webm' && url.mime !== 'video/ogg') {
         try {
-          imageUrl = await downloadFromIPFS(url.ipfsPath.split('ipfs://')[1]);
+          imageUrl = await getIPFSUrl(url.ipfsPath.split('ipfs://')[1]);
         } catch (error) {
-          console.error("Error downloading IPFS image:", error);
+          console.error("Error getting IPFS URL:", error);
         }
       }
 
