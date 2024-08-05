@@ -21,18 +21,21 @@ const IPFS_GATEWAYS = [
 ];
 
 async function findAvailableIPFSUrl(ipfsPath) {
-  for (const gateway of IPFS_GATEWAYS) {
+  const checks = IPFS_GATEWAYS.map(async gateway => {
     try {
       const url = `${gateway}${ipfsPath}`;
-      const response = await axios.head(url);
+      const response = await axios.head(url, { timeout: 2000 }); // Zkrácení času čekání na 2 sekundy
       if (response.status === 200) {
         return url;
       }
     } catch (error) {
       console.error(`Error checking gateway ${gateway}:`, error);
     }
-  }
-  return null;
+    return null;
+  });
+
+  const results = await Promise.all(checks);
+  return results.find(url => url !== null);
 }
 
 export async function GET(request) {
