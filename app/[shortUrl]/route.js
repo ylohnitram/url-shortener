@@ -6,11 +6,33 @@ import axios from 'axios';
 
 const IPDATA_API_KEY = process.env.IPDATA_API_KEY;
 
+const IPFS_GATEWAYS = [
+  "https://ipfs.io/ipfs/",
+  "https://gateway.pinata.cloud/ipfs/",
+  "https://cloudflare-ipfs.com/ipfs/"
+];
+
+async function findAvailableIPFSUrl(ipfsPath) {
+  const checks = IPFS_GATEWAYS.map(async gateway => {
+    try {
+      const url = `${gateway}${ipfsPath}`;
+      const response = await axios.head(url);
+      if (response.status === 200) {
+        return url;
+      }
+    } catch (error) {
+      console.error(`Error checking gateway ${gateway}:`, error);
+    }
+    return null;
+  });
+
+  const results = await Promise.all(checks);
+  return results.find(url => url !== null);
+}
+
 export async function GET(request) {
   const { pathname } = new URL(request.url);
   const shortUrl = pathname.split('/').pop();
-
-  console.log("Received request to redirect short URL:", shortUrl);
 
   try {
     const Url = await getUrlModel();
@@ -18,8 +40,6 @@ export async function GET(request) {
 
     const url = await Url.findOne({ shortUrl });
     if (url) {
-      console.log("Found original URL:", url.originalUrl);
-
       let ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('remote-addr');
       if (ipAddress.startsWith('::ffff:')) {
         ipAddress = ipAddress.split('::ffff:')[1];
@@ -29,7 +49,7 @@ export async function GET(request) {
       const userAgent = request.headers.get('user-agent') || '';
       const ua = parser(userAgent);
 
-      let deviceType = 'desktop';
+      let deviceType = 'unknown';
       if (ua.device.type) {
         deviceType = ua.device.type;
       }
@@ -39,7 +59,6 @@ export async function GET(request) {
       if (ipAddress !== '127.0.0.1') {
         try {
           const response = await axios.get(`https://api.ipdata.co/${ipAddress}?api-key=${IPDATA_API_KEY}`);
-          console.log('Geolocation API response:', response.data);
           geo = {
             country: response.data.country_name,
             region: response.data.region,
@@ -49,12 +68,6 @@ export async function GET(request) {
           console.error("Geo Location Error:", err);
         }
       }
-
-      console.log("IP Address:", ipAddress);
-      console.log("Referer:", referer);
-      console.log("User Agent:", userAgent);
-      console.log("Device Type:", deviceType);
-      console.log("Geo Location:", geo);
 
       // Uložit informace o kliknutí
       const newClick = new Click({
@@ -70,7 +83,13 @@ export async function GET(request) {
       });
 
       await newClick.save();
-      console.log("Saved click information:", newClick);
+
+      // Najít dostupný IPFS obrázek
+      const ipfsPath = url.ipfsPath;
+      const imageUrl = await findAvailableIPFSUrl(ipfsPath);
+      if (!imageUrl) {
+        return NextResponse.json({ error: 'No available IPFS gateway found for the image' }, { status: 404 });
+      }
 
       // Vraťte HTML odpověď s meta tagy a automatickým přesměrováním
       const htmlResponse = `
@@ -81,18 +100,18 @@ export async function GET(request) {
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <meta property="og:title" content="${url.title || 'Title not available'}">
           <meta property="og:description" content="${url.description || 'Description not available'}">
-          <meta property="og:image" content="https://gateway.pinata.cloud/ipfs/QmbjwPyNd5pah8ceiuHBCezrSZjDLvfdCYjgZbmzrcwZaL">
+          <meta property="og:image" content="${imageUrl}">
           <meta property="og:url" content="https://tzurl.art/${shortUrl}">
           <meta name="twitter:card" content="summary_large_image">
           <meta name="twitter:title" content="${url.title || 'Title not available'}">
           <meta name="twitter:description" content="${url.description || 'Description not available'}">
-          <meta name="twitter:image" content="https://gateway.pinata.cloud/ipfs/QmbjwPyNd5pah8ceiuHBCezrSZjDLvfdCYjgZbmzrcwZaL">
+          <meta name="twitter:image" content="${imageUrl}">
           <meta name="twitter:site" content="@cce_sro">
           <meta name="twitter:creator" content="@cce_sro">
           <title>Redirecting...</title>
           <script>
             document.addEventListener('DOMContentLoaded', function() {
-              let countdown = 3;
+              let countdown = 2;
               const countdownElement = document.getElementById('countdown');
               const interval = setInterval(() => {
                 countdownElement.textContent = countdown;
@@ -106,7 +125,7 @@ export async function GET(request) {
           </script>
         </head>
         <body>
-          <p>Redirecting to <a href="${url.originalUrl}">${url.originalUrl}</a> in <span id="countdown">3</span> seconds...</p>
+          <p>Redirecting to <a href="${url.originalUrl}">${url.originalUrl}</a> in <span id="countdown">2</span> seconds...</p>
           <p>Shortened by <a href="https://tzurl.art/">tzurl.art</a></p>
         </body>
         </html>
