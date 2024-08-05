@@ -16,18 +16,17 @@ async function fetchMetadata(originalUrl) {
   const query = `
     query ItemDescription {
       token(
-        where: {fa_contract: {_eq: "${fa_contract}"}, token_id: {_eq: "${token_id}"}}
+        where: {fa_contract: {_eq: "${fa_contract}"}, token_id: {_eq: "${token_id}"}
       ) {
         name
         description
         thumbnail_uri
+        mime
       }
     }
   `;
 
-  const response = await axios.post(GRAPHQL_API_URL, {
-    query,
-  });
+  const response = await axios.post(GRAPHQL_API_URL, { query });
 
   if (response.data.errors) {
     throw new Error(response.data.errors[0].message);
@@ -41,7 +40,8 @@ async function fetchMetadata(originalUrl) {
   return {
     title: tokenData.name,
     description: tokenData.description,
-    thumbnail_uri: tokenData.thumbnail_uri.replace('ipfs://', ''),
+    thumbnail_uri: tokenData.thumbnail_uri,
+    mime: tokenData.mime,
   };
 }
 
@@ -80,13 +80,15 @@ export async function POST(request) {
     // 3. Získat metadata z objkt.com
     let title = 'Title not available';
     let description = 'Description not available';
-    let thumbnail_uri = '/images/tzurl-not-found.svg';
+    let thumbnail_uri = 'tzurl-not-found.svg';
+    let mime = '';
 
     try {
       const metadata = await fetchMetadata(originalUrl);
       title = metadata.title;
       description = metadata.description;
-      thumbnail_uri = metadata.thumbnail_uri;
+      thumbnail_uri = metadata.thumbnail_uri.split('ipfs://')[1];
+      mime = metadata.mime;
     } catch (error) {
       console.error("Metadata fetch failed:", error);
     }
@@ -99,7 +101,8 @@ export async function POST(request) {
       author: author || 'anonymous',
       title,
       description,
-      ipfsPath: thumbnail_uri,
+      ipfsPath: mime.startsWith('image/') ? thumbnail_uri : 'tzurl-not-found.svg',
+      mime,
     });
     await newUrl.save();
     console.log("Saved new URL:", newUrl);
