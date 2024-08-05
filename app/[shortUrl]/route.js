@@ -1,42 +1,13 @@
+// app/[shortUrl]/route.js
+
 import { NextResponse } from 'next/server';
 import getUrlModel from '../../models/Url';
 import getClickModel from '../../models/Click';
 import parser from 'ua-parser-js';
 import axios from 'axios';
+import { downloadFromIPFS } from '../../lib/ipfs';
 
 const IPDATA_API_KEY = process.env.IPDATA_API_KEY;
-
-const IPFS_GATEWAYS = [
-  "https://ipfs.io/ipfs/",
-  "https://gateway.pinata.cloud/ipfs/",
-  "https://cloudflare-ipfs.com/ipfs/",
-  "https://dweb.link/ipfs/",
-  "https://4everland.io/ipfs/",
-  "https://ipfs.eth.aragon.network/ipfs/",
-  "https://w3s.link/ipfs/",
-  "https://trustless-gateway.link/ipfs/",
-  "https://ipfs.runfission.com/ipfs/",
-  "https://hardbin.com/ipfs/",
-  "https://nftstorage.link/ipfs/"
-];
-
-async function findAvailableIPFSUrl(ipfsPath) {
-  const checks = IPFS_GATEWAYS.map(async gateway => {
-    try {
-      const url = `${gateway}${ipfsPath}`;
-      const response = await axios.head(url, { timeout: 2000 });
-      if (response.status === 200) {
-        return url;
-      }
-    } catch (error) {
-      console.error(`Error checking gateway ${gateway}:`, error);
-    }
-    return null;
-  });
-
-  const results = await Promise.all(checks);
-  return results.find(url => url !== null);
-}
 
 export async function GET(request) {
   const { pathname } = new URL(request.url);
@@ -95,10 +66,10 @@ export async function GET(request) {
       // Zkontrolovat MIME typ
       let imageUrl = url.ipfsPath;
       if (url.mime !== 'image/png' && url.mime !== 'image/jpeg' && url.mime !== 'image/jpg') {
-        imageUrl = 'bafkreie7g3esi7hx27z5n7xx5mkhxzmnboj6hycsfj436iwjusymu233va';
+        imageUrl = 'images/tzurl-not-found.svg';
       } else {
         // Najít dostupný IPFS obrázek
-        imageUrl = await findAvailableIPFSUrl(url.ipfsPath) || 'bafkreie7g3esi7hx27z5n7xx5mkhxzmnboj6hycsfj436iwjusymu233va';
+        imageUrl = await downloadFromIPFS(url.ipfsPath) || 'images/tzurl-not-found.svg';
       }
 
       // Vraťte HTML odpověď s meta tagy a automatickým přesměrováním

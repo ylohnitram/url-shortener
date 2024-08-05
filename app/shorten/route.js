@@ -3,7 +3,7 @@ import getUrlModel from '../../models/Url';
 import { nanoid } from 'nanoid';
 import axios from 'axios';
 import sharp from 'sharp';
-import { fetchFromIPFS, uploadToWeb3Storage, getIPFSUrl } from '../../lib/ipfs';
+import { uploadToWeb3Storage, findAvailableIPFSUrl, downloadFromIPFS } from '../../lib/ipfs';
 
 const GRAPHQL_API_URL = 'https://data.objkt.com/v3/graphql';
 
@@ -28,9 +28,7 @@ async function fetchMetadata(originalUrl) {
     }
   `;
 
-  const response = await axios.post(GRAPHQL_API_URL, {
-    query,
-  });
+  const response = await axios.post(GRAPHQL_API_URL, { query });
 
   if (response.data.errors) {
     throw new Error(response.data.errors[0].message);
@@ -49,29 +47,9 @@ async function fetchMetadata(originalUrl) {
   };
 }
 
-async function processThumbnail(thumbnailUri, mime) {
-  if (mime === 'image/gif' || mime.startsWith('video/')) {
-    try {
-      const ipfsPath = thumbnailUri.replace('ipfs://', '');
-      const buffer = await fetchFromIPFS(ipfsPath);
-      const staticBuffer = await sharp(buffer).png().toBuffer();
-      const cid = await uploadToWeb3Storage(staticBuffer, 'thumbnail.png');
-      const staticImageUrl = await getIPFSUrl(cid, 'thumbnail.png');
-      return staticImageUrl || '/images/tzurl-not-found.svg';
-    } catch (error) {
-      console.error("Error processing thumbnail:", error.message);
-      return '/images/tzurl-not-found.svg';
-    }
-  } else {
-    return thumbnailUri.replace('ipfs://', '');
-  }
-}
-
 export async function POST(request) {
   const Url = await getUrlModel();
   const { originalUrl, author } = await request.json();
-  console.log("Received URL to shorten:", originalUrl);
-  console.log("Received author:", author);
 
   if (!originalUrl) {
     console.error("Invalid URL provided");
@@ -82,7 +60,6 @@ export async function POST(request) {
     // 1. Zkontrolovat, zda URL již existuje
     const existingUrl = await Url.findOne({ originalUrl });
     if (existingUrl) {
-      console.log("URL already exists:", existingUrl);
       return NextResponse.json({ shortUrl: existingUrl.shortUrl }, { status: 200 });
     }
 
@@ -95,24 +72,32 @@ export async function POST(request) {
         return NextResponse.json({ error: 'URL is not accessible' }, { status: 400 });
       }
     } catch (error) {
-      console.error("URL verification failed:", error.message);
+      console.error("URL verification failed:", error);
       return NextResponse.json({ error: 'URL verification failed' }, { status: 400 });
     }
 
     // 3. Získat metadata z objkt.com
     let title = 'Title not available';
     let description = 'Description not available';
-    let thumbnail_uri = '/images/tzurl-not-found.svg';
+    let thumbnail_uri = 'images/tzurl-not-found.svg';
     let mime = '';
 
     try {
       const metadata = await fetchMetadata(originalUrl);
       title = metadata.title;
       description = metadata.description;
-      thumbnail_uri = await processThumbnail(metadata.thumbnail_uri, metadata.mime);
       mime = metadata.mime;
+
+      if (mime === 'image/png' || mime === 'image/jpeg' || mime === 'image/jpg') {
+        thumbnail_uri = metadata.thumbnail_uri.split('ipfs://')[1];
+      } else if (mime === 'image/gif' || mime.startsWith('video/')) {
+        const buffer = await downloadFromIPFS(metadata.thumbnail_uri.split('ipfs://')[1]);
+        const staticImageBuffer = await sharp(buffer).png().toBuffer();
+        const cid = await uploadToWeb3Storage(staticImageBuffer, 'thumbnail.png');
+        thumbnail_uri = cid;
+      }
     } catch (error) {
-      console.error("Metadata fetch failed:", error.message);
+      console.error("Metadata fetch failed:", error);
     }
 
     // 4. Vytvořit novou zkrácenou URL, pokud neexistuje
@@ -124,13 +109,12 @@ export async function POST(request) {
       title,
       description,
       ipfsPath: thumbnail_uri,
-      mime
+      mime,
     });
     await newUrl.save();
-    console.log("Saved new URL:", newUrl);
     return NextResponse.json({ shortUrl }, { status: 201 });
   } catch (error) {
-    console.error("Error saving to the database:", error.message);
+    console.error("Error saving to the database:", error);
     return NextResponse.json({ error: 'Database error' }, { status: 500 });
   }
 }
