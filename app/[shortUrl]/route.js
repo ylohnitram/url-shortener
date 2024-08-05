@@ -9,7 +9,15 @@ const IPDATA_API_KEY = process.env.IPDATA_API_KEY;
 const IPFS_GATEWAYS = [
   "https://ipfs.io/ipfs/",
   "https://gateway.pinata.cloud/ipfs/",
-  "https://cloudflare-ipfs.com/ipfs/"
+  "https://cloudflare-ipfs.com/ipfs/",
+  "https://dweb.link/ipfs/",
+  "https://4everland.io/ipfs/",
+  "https://ipfs.eth.aragon.network/ipfs/",
+  "https://w3s.link/ipfs/",
+  "https://trustless-gateway.link/ipfs/",
+  "https://ipfs.runfission.com/ipfs/",
+  "https://hardbin.com/ipfs/",
+  "https://nftstorage.link/ipfs/"
 ];
 
 async function findAvailableIPFSUrl(ipfsPath) {
