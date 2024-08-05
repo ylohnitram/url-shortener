@@ -91,16 +91,18 @@ export async function GET(request) {
           <meta name="twitter:creator" content="@tzurl_art">
           <title>Redirecting...</title>
           <script>
-            let countdown = 3;
-            const countdownElement = document.getElementById('countdown');
-            const interval = setInterval(() => {
-              countdownElement.textContent = countdown;
-              countdown -= 1;
-              if (countdown < 0) {
-                clearInterval(interval);
-                window.location.href = "${url.originalUrl}";
-              }
-            }, 1000);
+            document.addEventListener('DOMContentLoaded', function() {
+              let countdown = 3;
+              const countdownElement = document.getElementById('countdown');
+              const interval = setInterval(() => {
+                countdownElement.textContent = countdown;
+                countdown -= 1;
+                if (countdown < 0) {
+                  clearInterval(interval);
+                  window.location.href = "${url.originalUrl}";
+                }
+              }, 1000);
+            });
           </script>
         </head>
         <body>
