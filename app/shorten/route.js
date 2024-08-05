@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import getUrlModel from '../../models/Url';
 import { nanoid } from 'nanoid';
 import axios from 'axios';
+import sharp from 'sharp'; // Ensure you have sharp installed
 import { downloadFromIPFS, uploadToWeb3Storage } from '../../lib/ipfs';
 
 const GRAPHQL_API_URL = 'https://data.objkt.com/v3/graphql';
@@ -41,7 +42,7 @@ async function fetchMetadata(originalUrl) {
   return {
     title: tokenData.name,
     description: tokenData.description,
-    thumbnail_uri: tokenData.thumbnail_uri,
+    thumbnail_uri: tokenData.thumbnail_uri.split('ipfs://')[1], // Remove the protocol prefix
     mime: tokenData.mime,
   };
 }
@@ -75,14 +76,14 @@ export async function POST(request) {
     // 3. Získat metadata z objkt.com
     let title = 'Title not available';
     let description = 'Description not available';
-    let thumbnail_uri = 'images/tzurl-not-found.svg';
+    let thumbnail_uri = 'https://tzurl.art/images/tzurl-not-found.svg';
     let mime = '';
 
     try {
       const metadata = await fetchMetadata(originalUrl);
       title = metadata.title;
       description = metadata.description;
-      thumbnail_uri = metadata.thumbnail_uri.split('ipfs://')[1]; // Remove the protocol prefix
+      thumbnail_uri = metadata.thumbnail_uri;
       mime = metadata.mime;
     } catch (error) {
       console.error("Metadata fetch failed:", error);
@@ -92,8 +93,9 @@ export async function POST(request) {
     if (mime === 'image/gif' || mime.startsWith('video/')) {
       try {
         const buffer = await downloadFromIPFS(thumbnail_uri); // Using IPFS library for downloading
-        const cid = await uploadToWeb3Storage(buffer, 'thumbnail.png');
-        thumbnail_uri = cid;
+        const staticImageBuffer = await sharp(buffer).toFormat('png').toBuffer();
+        const cid = await uploadToWeb3Storage(staticImageBuffer, 'thumbnail.png');
+        thumbnail_uri = `${cid}/thumbnail.png`;
       } catch (error) {
         console.error("GIF/Video processing failed:", error);
       }
