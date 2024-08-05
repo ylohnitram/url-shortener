@@ -15,7 +15,9 @@
     "next": "14.2.5",
     "react": "^18",
     "react-dom": "^18",
-    "ua-parser-js": "^1.0.38"
+    "sharp": "^0.33.4",
+    "ua-parser-js": "^1.0.38",
+    "web3.storage": "^4.5.5"
   },
   "devDependencies": {
     "postcss": "^8",

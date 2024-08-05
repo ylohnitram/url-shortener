@@ -24,7 +24,7 @@ async function findAvailableIPFSUrl(ipfsPath) {
   const checks = IPFS_GATEWAYS.map(async gateway => {
     try {
       const url = `${gateway}${ipfsPath}`;
-      const response = await axios.head(url, { timeout: 1000 });  // Zkrácený timeout na 1s
+      const response = await axios.head(url, { timeout: 2000 });
       if (response.status === 200) {
         return url;
       }
@@ -35,7 +35,7 @@ async function findAvailableIPFSUrl(ipfsPath) {
   });
 
   const results = await Promise.all(checks);
-  return results.find(url => url !== null) || '/images/tzurl-not-found.svg';
+  return results.find(url => url !== null);
 }
 
 export async function GET(request) {
@@ -92,9 +92,14 @@ export async function GET(request) {
 
       await newClick.save();
 
-      // Najít dostupný IPFS obrázek
-      const ipfsPath = url.ipfsPath;
-      const imageUrl = await findAvailableIPFSUrl(ipfsPath);
+      // Zkontrolovat MIME typ
+      let imageUrl = url.ipfsPath;
+      if (url.mime !== 'image/png' && url.mime !== 'image/jpeg' && url.mime !== 'image/jpg') {
+        imageUrl = 'bafkreie7g3esi7hx27z5n7xx5mkhxzmnboj6hycsfj436iwjusymu233va';
+      } else {
+        // Najít dostupný IPFS obrázek
+        imageUrl = await findAvailableIPFSUrl(url.ipfsPath) || 'bafkreie7g3esi7hx27z5n7xx5mkhxzmnboj6hycsfj436iwjusymu233va';
+      }
 
       // Vraťte HTML odpověď s meta tagy a automatickým přesměrováním
       const htmlResponse = `
