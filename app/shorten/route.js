@@ -50,18 +50,14 @@ async function fetchMetadata(originalUrl) {
 export async function POST(request) {
   const Url = await getUrlModel();
   const { originalUrl, author } = await request.json();
-  console.log("Received URL to shorten:", originalUrl);
-  console.log("Received author:", author);
 
   if (!originalUrl) {
-    console.error("Invalid URL provided");
     return NextResponse.json({ error: 'Invalid URL' }, { status: 400 });
   }
 
   try {
     const existingUrl = await Url.findOne({ originalUrl });
     if (existingUrl) {
-      console.log("URL already exists:", existingUrl);
       return NextResponse.json({ shortUrl: existingUrl.shortUrl }, { status: 200 });
     }
 
@@ -69,11 +65,9 @@ export async function POST(request) {
       const response = await axios.head(originalUrl);
       const statusCode = response.status;
       if (statusCode < 200 || statusCode >= 400) {
-        console.error("URL is not accessible:", statusCode);
         return NextResponse.json({ error: 'URL is not accessible' }, { status: 400 });
       }
     } catch (error) {
-      console.error("URL verification failed:", error);
       return NextResponse.json({ error: 'URL verification failed' }, { status: 400 });
     }
 
@@ -97,10 +91,10 @@ export async function POST(request) {
         const ipfsPath = thumbnail_uri.split('ipfs://')[1];
         const buffer = await downloadFromIPFS(ipfsPath);
         const convertedBuffer = await sharp(buffer).png().toBuffer();
-        thumbnail_uri = await uploadToWeb3Storage(convertedBuffer, 'thumbnail.png');
+        const cid = await uploadToWeb3Storage(convertedBuffer, 'thumbnail.png');
+        thumbnail_uri = `${cid}/thumbnail.png`;
       } catch (error) {
-        console.error("Image conversion or upload failed:", error);
-        thumbnail_uri = 'images/tzurl-not-found.svg';
+        thumbnail_uri = 'https://tzurl.art/images/tzurl-not-found.svg';
       }
     }
 
@@ -115,10 +109,8 @@ export async function POST(request) {
       mime
     });
     await newUrl.save();
-    console.log("Saved new URL:", newUrl);
     return NextResponse.json({ shortUrl }, { status: 201 });
   } catch (error) {
-    console.error("Error saving to the database:", error);
     return NextResponse.json({ error: 'Database error' }, { status: 500 });
   }
 }
