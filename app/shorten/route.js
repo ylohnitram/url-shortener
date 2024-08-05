@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server';
 import getUrlModel from '../../models/Url';
 import { nanoid } from 'nanoid';
 import axios from 'axios';
-import sharp from 'sharp';
-import { uploadToWeb3Storage, findAvailableIPFSUrl, downloadFromIPFS } from '../../lib/ipfs';
+import { downloadFromIPFS, uploadToWeb3Storage } from '../../lib/ipfs';
 
 const GRAPHQL_API_URL = 'https://data.objkt.com/v3/graphql';
 
@@ -18,7 +17,7 @@ async function fetchMetadata(originalUrl) {
   const query = `
     query ItemDescription {
       token(
-        where: {fa_contract: {_eq: "${fa_contract}"}, token_id: {_eq: "${token_id}"} }
+        where: {fa_contract: {_eq: "${fa_contract}"}, token_id: {_eq: "${token_id}"}}
       ) {
         name
         description
@@ -43,7 +42,7 @@ async function fetchMetadata(originalUrl) {
     title: tokenData.name,
     description: tokenData.description,
     thumbnail_uri: tokenData.thumbnail_uri,
-    mime: tokenData.mime
+    mime: tokenData.mime,
   };
 }
 
@@ -52,7 +51,6 @@ export async function POST(request) {
   const { originalUrl, author } = await request.json();
 
   if (!originalUrl) {
-    console.error("Invalid URL provided");
     return NextResponse.json({ error: 'Invalid URL' }, { status: 400 });
   }
 
@@ -68,11 +66,9 @@ export async function POST(request) {
       const response = await axios.head(originalUrl);
       const statusCode = response.status;
       if (statusCode < 200 || statusCode >= 400) {
-        console.error("URL is not accessible:", statusCode);
         return NextResponse.json({ error: 'URL is not accessible' }, { status: 400 });
       }
     } catch (error) {
-      console.error("URL verification failed:", error);
       return NextResponse.json({ error: 'URL verification failed' }, { status: 400 });
     }
 
@@ -86,21 +82,24 @@ export async function POST(request) {
       const metadata = await fetchMetadata(originalUrl);
       title = metadata.title;
       description = metadata.description;
+      thumbnail_uri = metadata.thumbnail_uri.split('ipfs://')[1]; // Remove the protocol prefix
       mime = metadata.mime;
-
-      if (mime === 'image/png' || mime === 'image/jpeg' || mime === 'image/jpg') {
-        thumbnail_uri = metadata.thumbnail_uri.split('ipfs://')[1];
-      } else if (mime === 'image/gif' || mime.startsWith('video/')) {
-        const buffer = await downloadFromIPFS(metadata.thumbnail_uri.split('ipfs://')[1]);
-        const staticImageBuffer = await sharp(buffer).png().toBuffer();
-        const cid = await uploadToWeb3Storage(staticImageBuffer, 'thumbnail.png');
-        thumbnail_uri = cid;
-      }
     } catch (error) {
       console.error("Metadata fetch failed:", error);
     }
 
-    // 4. Vytvořit novou zkrácenou URL, pokud neexistuje
+    // 4. Pokud je MIME typ "image/gif" nebo video, vytvořit statický obrázek a nahrát na web3.storage
+    if (mime === 'image/gif' || mime.startsWith('video/')) {
+      try {
+        const buffer = await downloadFromIPFS(thumbnail_uri); // Using IPFS library for downloading
+        const cid = await uploadToWeb3Storage(buffer, 'thumbnail.png');
+        thumbnail_uri = cid;
+      } catch (error) {
+        console.error("GIF/Video processing failed:", error);
+      }
+    }
+
+    // 5. Vytvořit novou zkrácenou URL, pokud neexistuje
     const shortUrl = nanoid(6);
     const newUrl = new Url({
       originalUrl,
