@@ -83,6 +83,7 @@ export async function POST(request) {
 
     try {
       const metadata = await fetchMetadata(originalUrl);
+      console.log("Fetched metadata:", metadata);
       title = metadata.title;
       description = metadata.description;
       thumbnail_uri = metadata.thumbnail_uri;
@@ -93,9 +94,13 @@ export async function POST(request) {
 
     if (mime === 'image/gif' || mime === 'video/mp4' || mime === 'video/webm' || mime === 'video/ogg') {
       try {
+        console.log("Converting and uploading static image for MIME type:", mime);
         const buffer = await downloadFromIPFS(thumbnail_uri.split('ipfs://')[1]);
+        console.log("Downloaded buffer from IPFS");
         const staticImageBuffer = await sharp(buffer).png().toBuffer();
+        console.log("Converted image to PNG");
         const cid = await uploadToPinata(staticImageBuffer, 'thumbnail.png');
+        console.log(`Uploaded PNG to Pinata with CID: ${cid}`);
         thumbnail_uri = `ipfs://${cid}`;
       } catch (error) {
         console.error("Failed to convert and upload image:", error);
