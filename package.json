@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@web3-storage/w3up-client": "^16.0.0",
     "axios": "^1.7.3",
     "mongoose": "^8.5.2",
     "nanoid": "^5.0.7",
