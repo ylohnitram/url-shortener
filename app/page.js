@@ -5,9 +5,12 @@ export default function Home() {
   const [originalUrl, setOriginalUrl] = useState('');
   const [shortUrl, setShortUrl] = useState('');
   const [copied, setCopied] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setShortUrl(''); // Vymaže předchozí vygenerovaný odkaz
     const response = await fetch('/shorten', {
       method: 'POST',
       headers: {
@@ -17,6 +20,7 @@ export default function Home() {
     });
     const data = await response.json();
     setShortUrl(`${window.location.origin}/${data.shortUrl}`);
+    setLoading(false);
     setCopied(false);
   };
 
@@ -45,8 +49,14 @@ export default function Home() {
             value="anonymous"
             name="author"
           />
-          <button type="submit" className="w-full p-2 bg-gray-800 text-white rounded hover:bg-gray-900">
-            Shorten
+          <button
+            type="submit"
+            className={`w-full p-2 rounded ${
+              loading ? 'bg-gray-500' : 'bg-gray-800 hover:bg-gray-900'
+            } text-white`}
+            disabled={loading}
+          >
+            {loading ? 'Generating...' : 'Shorten'}
           </button>
         </form>
         {shortUrl && (
