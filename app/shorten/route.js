@@ -62,7 +62,7 @@ export async function POST(request) {
     }
 
     try {
-      const response = await axios.head(originalUrl);
+      const response = await axios.head(originalUrl, { timeout: 2000 });
       const statusCode = response.status;
       if (statusCode < 200 || statusCode >= 400) {
         return NextResponse.json({ error: 'URL is not accessible' }, { status: 400 });
@@ -90,10 +90,13 @@ export async function POST(request) {
       try {
         const ipfsPath = thumbnail_uri.split('ipfs://')[1];
         const buffer = await downloadFromIPFS(ipfsPath);
+        console.log("Downloaded GIF from IPFS, converting to PNG...");
         const convertedBuffer = await sharp(buffer).png().toBuffer();
+        console.log("Conversion complete, uploading to Web3.Storage...");
         const cid = await uploadToWeb3Storage(convertedBuffer, 'thumbnail.png');
         thumbnail_uri = `${cid}/thumbnail.png`;
       } catch (error) {
+        console.error("Conversion or upload failed:", error);
         thumbnail_uri = 'https://tzurl.art/images/tzurl-not-found.svg';
       }
     }
@@ -109,8 +112,10 @@ export async function POST(request) {
       mime
     });
     await newUrl.save();
+    console.log("URL successfully saved to DB.");
     return NextResponse.json({ shortUrl }, { status: 201 });
   } catch (error) {
+    console.error("Database error:", error);
     return NextResponse.json({ error: 'Database error' }, { status: 500 });
   }
 }
