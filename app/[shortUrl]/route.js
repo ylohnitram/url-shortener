@@ -87,7 +87,7 @@ export async function GET(request) {
           <title>Redirecting...</title>
           <script>
             document.addEventListener('DOMContentLoaded', function() {
-              let countdown = 2;
+              let countdown = 0;
               const countdownElement = document.getElementById('countdown');
               const interval = setInterval(() => {
                 countdownElement.textContent = countdown;
