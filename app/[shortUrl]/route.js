@@ -32,7 +32,7 @@ async function findAvailableIPFSUrl(ipfsPath) {
       console.error(`Error checking gateway ${gateway}:`, error);
     }
   }
-  throw new Error('No available IPFS gateway found for the image');
+  return null;
 }
 
 export async function GET(request) {
@@ -91,9 +91,9 @@ export async function GET(request) {
 
       // Najít dostupný IPFS obrázek
       const ipfsPath = url.ipfsPath;
-      const imageUrl = await findAvailableIPFSUrl(ipfsPath);
+      let imageUrl = await findAvailableIPFSUrl(ipfsPath);
       if (!imageUrl) {
-        return NextResponse.json({ error: 'No available IPFS gateway found for the image' }, { status: 404 });
+        imageUrl = '/images/tzurl-not-found.svg';
       }
 
       // Vraťte HTML odpověď s meta tagy a automatickým přesměrováním
