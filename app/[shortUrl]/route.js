@@ -81,14 +81,14 @@ export async function GET(request) {
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <meta property="og:title" content="${url.title || 'Title not available'}">
           <meta property="og:description" content="${url.description || 'Description not available'}">
-          <meta property="og:image" content="${url.originalUrl}">
+          <meta property="og:image" content="https://gateway.pinata.cloud/ipfs/QmbjwPyNd5pah8ceiuHBCezrSZjDLvfdCYjgZbmzrcwZaL">
           <meta property="og:url" content="https://tzurl.art/${shortUrl}">
           <meta name="twitter:card" content="summary_large_image">
           <meta name="twitter:title" content="${url.title || 'Title not available'}">
           <meta name="twitter:description" content="${url.description || 'Description not available'}">
-          <meta name="twitter:image" content="${url.originalUrl}">
-          <meta name="twitter:site" content="@tzurl_art">
-          <meta name="twitter:creator" content="@tzurl_art">
+          <meta name="twitter:image" content="https://gateway.pinata.cloud/ipfs/QmbjwPyNd5pah8ceiuHBCezrSZjDLvfdCYjgZbmzrcwZaL">
+          <meta name="twitter:site" content="@cce_sro">
+          <meta name="twitter:creator" content="@cce_sro">
           <title>Redirecting...</title>
           <script>
             document.addEventListener('DOMContentLoaded', function() {
