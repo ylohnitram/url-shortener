@@ -81,17 +81,19 @@ export async function GET(request) {
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <meta property="og:title" content="${url.title || 'Title not available'}">
           <meta property="og:description" content="${url.description || 'Description not available'}">
-          <meta property="og:image" content="${url.image || 'https://gateway.pinata.cloud/ipfs/QmbjwPyNd5pah8ceiuHBCezrSZjDLvfdCYjgZbmzrcwZaL'}">
+          <meta property="og:image" content="${url.image || 'https://example.com/default-image.jpg'}">
           <meta property="og:url" content="https://tzurl.art/${shortUrl}">
           <meta name="twitter:card" content="summary_large_image">
           <meta name="twitter:title" content="${url.title || 'Title not available'}">
           <meta name="twitter:description" content="${url.description || 'Description not available'}">
-          <meta name="twitter:image" content="${url.image || 'https://gateway.pinata.cloud/ipfs/QmbjwPyNd5pah8ceiuHBCezrSZjDLvfdCYjgZbmzrcwZaL'}">
-          <meta http-equiv="refresh" content="3;url=${url.originalUrl}">
+          <meta name="twitter:image" content="${url.image || 'https://example.com/default-image.jpg'}">
+          <meta name="twitter:site" content="@tzurl_art">
+          <meta name="twitter:creator" content="@tzurl_art">
           <title>Redirecting...</title>
         </head>
         <body>
           <p>Redirecting to <a href="${url.originalUrl}">${url.originalUrl}</a></p>
+          <p>Shortened by <a href="https://tzurl.art/${shortUrl}">tzurl.art</a></p>
         </body>
         </html>
       `;
