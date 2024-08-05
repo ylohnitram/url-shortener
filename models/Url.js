@@ -17,19 +17,19 @@ const UrlSchema = new mongoose.Schema({
   },
   title: {
     type: String,
-    default: 'Title not available',
+    default: 'Title not available'
   },
   description: {
     type: String,
-    default: 'Description not available',
+    default: 'Description not available'
   },
   ipfsPath: {
     type: String,
-    default: 'tzurl-not-found.svg',
+    default: 'tzurl-not-found.svg'
   },
   mime: {
     type: String,
-    default: '',
+    default: ''
   },
   createdAt: {
     type: Date,
